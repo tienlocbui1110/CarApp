@@ -7,21 +7,21 @@ const styles = {
     width: width
   },
   inputWrapper: {
-    marginLeft: 15,
-    marginRight: 10,
+    marginLeft: 25,
+    marginRight: 25,
     marginTop: 10,
     marginBottom: 0,
     backgroundColor: "#fff",
-    opacity: 0.9,
-    borderRadius: 7
+    opacity: 0.8,
+    borderRadius: 10
   },
   secondInputWrapper: {
-    marginLeft: 15,
-    marginRight: 10,
+    marginLeft: 25,
+    marginRight: 25,
     marginTop: 0,
     backgroundColor: "#fff",
-    opacity: 0.9,
-    borderRadius: 7
+    opacity: 0.8,
+    borderRadius: 10
   },
   inputSearch: {
     fontSize: 14
