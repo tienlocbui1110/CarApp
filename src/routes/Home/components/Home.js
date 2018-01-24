@@ -1,8 +1,11 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { Container } from "native-base";
+import { Container, Content } from "native-base";
 import MapContainer from "./MapContainer";
-import { getInputData } from "../modules/home";
+import HeaderComponent from "../../../components/HeaderComponent";
+import FooterComponent from "../../../components/FooterComponent";
+
+const logoTaxi = require("../../../assets/img/taxi.png");
 
 class Home extends React.Component {
   componentDidMount() {
@@ -17,6 +20,8 @@ class Home extends React.Component {
     };
     return (
       <Container>
+        <HeaderComponent logo={logoTaxi} />
+        <Content />
         {this.props.region.latitude && (
           <MapContainer
             region={this.props.region}
@@ -27,6 +32,7 @@ class Home extends React.Component {
             predictions={this.props.predictions}
           />
         )}
+        <FooterComponent />
       </Container>
     );
   }
