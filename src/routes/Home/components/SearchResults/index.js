@@ -5,14 +5,22 @@ import { View, List, ListItem, Left, Body } from "native-base";
 import Icon from "../../../../../node_modules/react-native-vector-icons/dist/MaterialIcons";
 import style from "./SearchResultsStyle";
 
-export const SearchResults = predictions => {
-  console.debug(predictions.predictions);
+export const SearchResults = ({ predictions, getSelectedAddress }) => {
+  function handleSelectedAddress(placeID) {
+    getSelectedAddress(placeID);
+  }
   return (
     <View style={style.searchResultsWrapper}>
       <List
-        dataArray={predictions.predictions}
+        dataArray={predictions}
         renderRow={item => (
-          <ListItem button avatar>
+          <ListItem
+            onPress={() => {
+              handleSelectedAddress(item.placeID);
+            }}
+            button
+            avatar
+          >
             <Left style={style.leftContainer}>
               <Icon style={style.leftIcon} name="location-on" />
             </Left>

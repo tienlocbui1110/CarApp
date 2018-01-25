@@ -2,12 +2,19 @@ import update from "react-addons-update";
 import constants from "./actionConstants";
 import { Dimensions } from "react-native";
 import RNGooglePlace from "react-native-google-places";
+import request from "../../../util/request";
+import caculateFare from "../../../util/fareCaculator";
+
 // Constants
 const {
   GET_CURRENT_LOCATION,
   GET_INPUT,
   TOGGLE_SEARCH_RESULT,
-  GET_ADDRESS_PREDICTION
+  GET_ADDRESS_PREDICTION,
+  GET_SELECTED_ADDRESS,
+  GET_DISTANCE_MATRIX,
+  GET_FARE,
+  BOOK_CAR
 } = constants;
 const { width, height } = Dimensions.get("window");
 const ASPECT_RATION = width / height;
@@ -68,6 +75,116 @@ export function getAddressPrediction() {
       });
   };
 }
+
+// get selected address
+export function getSelectedAddress(placeID) {
+  const dummyNumbers = {
+    baseFare: 5000,
+    timeRate: 1000,
+    distanceRate: 8000,
+    surge: 1
+  };
+  return (dispatch, store) => {
+    RNGooglePlace.lookUpPlaceByID(placeID)
+      .then(results => {
+        dispatch({
+          type: GET_SELECTED_ADDRESS,
+          payload: results
+        });
+      })
+      .then(() => {
+        // Get the distance and time
+        if (
+          store().home.selectedAddress.selectedPickUp &&
+          store().home.selectedAddress.selectedDropOff
+        ) {
+          request
+            .get("https://maps.googleapis.com/maps/api/distancematrix/json")
+            .query({
+              origins:
+                store().home.selectedAddress.selectedPickUp.latitude +
+                "," +
+                store().home.selectedAddress.selectedPickUp.longitude,
+              destinations:
+                store().home.selectedAddress.selectedDropOff.latitude +
+                "," +
+                store().home.selectedAddress.selectedDropOff.longitude,
+              mode: "driving",
+              key: "AIzaSyAPthBOs3jMkc19uh3oPG-EUIFmWDg6Fds"
+            })
+            .finish((err, res) => {
+              dispatch({
+                type: GET_DISTANCE_MATRIX,
+                payload: res.body
+              });
+            });
+          setTimeout(() => {
+            if (
+              store().home.selectedAddress.selectedPickUp &&
+              store().home.selectedAddress.selectedDropOff
+            ) {
+              const fare = caculateFare(
+                dummyNumbers.baseFare,
+                dummyNumbers.timeRate,
+                store().home.distanceMatrix.rows[0].elements[0].duration.value,
+                dummyNumbers.distanceRate,
+                store().home.distanceMatrix.rows[0].elements[0].distance.value,
+                dummyNumbers.surge
+              );
+              dispatch({
+                type: GET_FARE,
+                payload: fare
+              });
+            }
+          }, 1000);
+        }
+      })
+      .catch(err => {
+        console.log(err);
+      });
+  };
+}
+
+// Book Car
+
+export function bookCar() {
+  return (dispatch, store) => {
+    const payload = {
+      data: {
+        userName: "loc",
+        pickUp: {
+          address: store().home.selectedAddress.selectedPickUp.address,
+          name: store().home.selectedAddress.selectedPickUp.name,
+          latitude: store().home.selectedAddress.selectedPickUp.latitude,
+          longitude: store().home.selectedAddress.selectedPickUp.longitude
+        },
+        dropOff: {
+          address: store().home.selectedAddress.selectedDropOff.address,
+          name: store().home.selectedAddress.selectedDropOff.name,
+          latitude: store().home.selectedAddress.selectedDropOff.latitude,
+          longitude: store().home.selectedAddress.selectedDropOff.longitude
+        },
+        fare: store().home.fare,
+        status: "pending"
+      }
+    };
+    request
+      .post("http://192.168.1.101:3000/api/bookings")
+      .send(payload)
+      .finish((err, res) => {
+        if (err) {
+          console.log(err);
+        } else {
+          console.debug(res.body);
+          dispatch({
+            type: BOOK_CAR,
+            payload: res.body
+          });
+        }
+      });
+  };
+}
+
 // Action handler
 
 function handleGetCurrentLocation(state, action) {
@@ -141,16 +258,66 @@ function handleGetAddressPrediction(state, action) {
   });
 }
 
+function handleGetSelectedAddress(state, action) {
+  let selectedTitle = state.resultTypes.pickUp
+    ? "selectedPickUp"
+    : "selectedDropOff";
+  return update(state, {
+    selectedAddress: {
+      [selectedTitle]: {
+        $set: action.payload
+      }
+    },
+    resultTypes: {
+      pickUp: {
+        $set: false
+      },
+      dropOff: {
+        $set: false
+      }
+    }
+  });
+}
+
+function handleGetDistanceMatrix(state, action) {
+  return update(state, {
+    distanceMatrix: {
+      $set: action.payload
+    }
+  });
+}
+
+function handleGetFare(state, action) {
+  return update(state, {
+    fare: {
+      $set: action.payload
+    }
+  });
+}
+
+function handleBookCar(state, action) {
+  return update(state, {
+    booking: {
+      $set: action.payload
+    }
+  });
+}
+
 const ACTION_HANDLERS = {
   GET_CURRENT_LOCATION: handleGetCurrentLocation,
   GET_INPUT: handleGetInputData,
   TOGGLE_SEARCH_RESULT: handleToggleSearchResult,
-  GET_ADDRESS_PREDICTION: handleGetAddressPrediction
+  GET_ADDRESS_PREDICTION: handleGetAddressPrediction,
+  GET_SELECTED_ADDRESS: handleGetSelectedAddress,
+  GET_DISTANCE_MATRIX: handleGetDistanceMatrix,
+  GET_FARE: handleGetFare,
+  BOOK_CAR: handleBookCar
 };
 const initialState = {
   region: {},
   inputData: {},
-  resultTypes: {}
+  resultTypes: {},
+  selectedAddress: {}
 };
 
 export function HomeReducer(state = initialState, action) {

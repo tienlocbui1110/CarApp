@@ -8,8 +8,10 @@ import style from "./SearchBoxStyle";
 export const SearchBox = ({
   getInputData,
   toggleSearchResultModel,
-  getAddressPrediction
+  getAddressPrediction,
+  selectedAddress
 }) => {
+  const { selectedPickUp, selectedDropOff } = selectedAddress || {};
   function handleInput(key, val) {
     getInputData({
       key,
@@ -27,6 +29,7 @@ export const SearchBox = ({
             style={style.inputSearch}
             placeholder="Chon diem bat dau"
             onChangeText={handleInput.bind(this, "pickUp")}
+            value={selectedPickUp && selectedPickUp.name}
             onFocus={() => toggleSearchResultModel("pickUp")}
           />
         </InputGroup>
@@ -39,6 +42,7 @@ export const SearchBox = ({
             style={style.inputSearch}
             placeholder="Chon diem den"
             onChangeText={handleInput.bind(this, "dropOff")}
+            value={selectedDropOff && selectedDropOff.name}
             onFocus={() => toggleSearchResultModel("dropOff")}
           />
         </InputGroup>

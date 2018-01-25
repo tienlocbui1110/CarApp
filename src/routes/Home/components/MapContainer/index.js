@@ -11,7 +11,9 @@ export const MapContainer = ({
   toggleSearchResultModel,
   getAddressPrediction,
   resultTypes,
-  predictions
+  predictions,
+  getSelectedAddress,
+  selectedAddress
 }) => {
   return (
     <View style={styles.map}>
@@ -26,9 +28,13 @@ export const MapContainer = ({
         getInputData={getInputData}
         toggleSearchResultModel={toggleSearchResultModel}
         getAddressPrediction={getAddressPrediction}
+        selectedAddress={selectedAddress}
       />
       {(resultTypes.pickUp || resultTypes.dropOff) && (
-        <SearchResults predictions={predictions} />
+        <SearchResults
+          predictions={predictions}
+          getSelectedAddress={getSelectedAddress}
+        />
       )}
     </View>
   );
