@@ -16,7 +16,8 @@ var BookingsSchema = new Schema({
     longitude: Number
   },
   fare: Number,
-  status: String
+  status: String,
+  driverId: String
 });
 
 module.exports = mongoose.model("Bookings", BookingsSchema);

@@ -13,15 +13,17 @@ export const HeaderComponent = ({ logo }) => {
         </Button>
       </Left>
       <Body>
-        <Image resizeMode="contain" style={style.logo} source={logo} />
+        {(logo && (
+          <Image resizeMode="contain" style={style.logo} source={logo} />
+        )) || <Text style={style.headerText}>Driver on the way</Text>}
       </Body>
-      <Right>
+      <Right> 
         <Button transparent>
           <Icon name="gift" style={style.icon} />
         </Button>
       </Right>
     </Header>
   );
-};  
+};
 
 export default HeaderComponent;

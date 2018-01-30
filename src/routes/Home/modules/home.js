@@ -14,7 +14,8 @@ const {
   GET_SELECTED_ADDRESS,
   GET_DISTANCE_MATRIX,
   GET_FARE,
-  BOOK_CAR
+  BOOK_CAR,
+  GET_NEARBY_DRIVERS
 } = constants;
 const { width, height } = Dimensions.get("window");
 const ASPECT_RATION = width / height;
@@ -149,6 +150,9 @@ export function getSelectedAddress(placeID) {
 
 export function bookCar() {
   return (dispatch, store) => {
+    const nearbyDrivers = store().home.nearbyDrivers;
+    const nearbyDriver =
+      nearbyDrivers[Math.floor(Math.random() * nearbyDrivers.length)];
     const payload = {
       data: {
         userName: "loc",
@@ -165,9 +169,16 @@ export function bookCar() {
           longitude: store().home.selectedAddress.selectedDropOff.longitude
         },
         fare: store().home.fare,
-        status: "pending"
+        status: "pending",
+        nearbyDriver: {
+          socketId: nearbyDriver.socketId,
+          driverId: nearbyDriver.driverId,
+          latitude: nearbyDriver.coordinate.coordinates[1],
+          longitude: nearbyDriver.coordinate.coordinates[0]
+        }
       }
     };
+    console.debug(payload);
     request
       .post("http://192.168.1.101:3000/api/bookings")
       .send(payload)
@@ -175,12 +186,30 @@ export function bookCar() {
         if (err) {
           console.log(err);
         } else {
-          console.debug(res.body);
           dispatch({
             type: BOOK_CAR,
             payload: res.body
           });
         }
+      });
+  };
+}
+// get nearby driver
+export function getNearbyDrivers() {
+  return (dispatch, store) => {
+    request
+      .get("http://192.168.1.101:3000/api/driverLocation")
+      .query({
+        latitude: store().home.region.latitude,
+        longitude: store().home.region.longitude
+      })
+      .finish((err, res) => {
+        if (err) console.debug(err);
+        else
+          dispatch({
+            type: GET_NEARBY_DRIVERS,
+            payload: res.body
+          });
       });
   };
 }
@@ -303,6 +332,23 @@ function handleBookCar(state, action) {
   });
 }
 
+function handleGetNearbyDrivers(state, action) {
+  return update(state, {
+    nearbyDrivers: {
+      $set: action.payload
+    }
+  });
+}
+
+function handleConfirmBooking(state, action) {
+  console.debug(action.payload);
+  return update(state, {
+    booking: {
+      $set: action.payload
+    }
+  });
+}
+
 const ACTION_HANDLERS = {
   GET_CURRENT_LOCATION: handleGetCurrentLocation,
   GET_INPUT: handleGetInputData,
@@ -311,7 +357,9 @@ const ACTION_HANDLERS = {
   GET_SELECTED_ADDRESS: handleGetSelectedAddress,
   GET_DISTANCE_MATRIX: handleGetDistanceMatrix,
   GET_FARE: handleGetFare,
-  BOOK_CAR: handleBookCar
+  BOOK_CAR: handleBookCar,
+  GET_NEARBY_DRIVERS: handleGetNearbyDrivers,
+  BOOKING_CONFIRMED: handleConfirmBooking
 };
 const initialState = {
   region: {},
